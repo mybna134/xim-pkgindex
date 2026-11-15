@@ -1,0 +1,54 @@
+name: version-bump-gost
+
+# Fork-only schedule entry; implementation is checked out from gost.
+
+on:
+  schedule:
+    - cron: '0 2 * * 1' # Monday 10:00 Asia/Shanghai (UTC+8)
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Verify updates without pushing or opening an upstream PR
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gost-version-bump
+  cancel-in-progress: false
+
+env:
+  UPDATER_COMMIT: 83b7c9565bf4169992960ddb907fa37b7da6ae46
+
+jobs:
+  gost:
+    if: github.repository == 'mybna134/xim-pkgindex'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gost
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/checkout@v4
+        with:
+          repository: openxlings/xpkgindex-update
+          ref: ${{ env.UPDATER_COMMIT }}
+          path: .updater
+          persist-credentials: false
+      - name: Use the pinned resource verifier
+        run: echo "PYTHONPATH=$PWD/.updater/src" >> "$GITHUB_ENV"
+      - name: Verify and propose GOST updates to upstream
+        env:
+          GH_TOKEN: ${{ secrets.XIM_PKGINDEX_TOKEN || github.token }}
+          PR_TOKEN: ${{ secrets.XIM_PKGINDEX_TOKEN }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          args=()
+          if [[ "$DRY_RUN" == true ]]; then args+=(--dry-run); fi
+          python .github/scripts/gost-bump.py --fork "$GITHUB_REPOSITORY" "${args[@]}"
