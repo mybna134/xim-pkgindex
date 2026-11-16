@@ -24,7 +24,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m pip install pytest pyyaml
+      - run: python -m pip install pytest pyyaml # host-dep-ok: runner test harness, not package runtime
       - uses: ./.github/actions/setup-xlings
         with:
           version: v2026.10.26.1
@@ -67,7 +67,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m pip install pytest
+      - run: python -m pip install pytest # host-dep-ok: runner payload test harness
       - name: Install userspace emulator for the payload smoke test
         if: matrix.emulator != ''
         run: sudo apt-get update -qq && sudo apt-get install -y qemu-user # host-dep-ok: cross-architecture test harness
