@@ -85,7 +85,7 @@ package = {
                 },
                 build = { "xim:7zip@26.02" },
             },
-            ["latest"] = { ref = "26.1103.32239" },
+            ["latest"] = { ref = "26.1111.71704" },
             ["26.1103.31037"] = {
                 x86_64 = {
                     url = "https://persistent.oaistatic.com/codex-app-prod/linux/deb/pool/main/c/chatgpt/chatgpt_26.1103.31037_amd64.deb",
@@ -170,9 +170,15 @@ package = {
                     sha256 = "eb0831c734f154f93f8ebcf0e17d118da0dea7dc1737dc61a1e71444375bf190",
                 },
             },
+            ["26.1111.71704"] = {
+                x86_64 = {
+                    url = "https://persistent.oaistatic.com/codex-app-prod/linux/deb/pool/main/c/chatgpt/chatgpt_26.1111.71704_amd64.deb",
+                    sha256 = "01eef7c77c835f7e1afb92ba1c29178a4c19d6c66573bdd3b86520e2abf806a4",
+                },
+            },
         },
         macosx = {
-            ["latest"] = { ref = "26.1103.41825" },
+            ["latest"] = { ref = "26.1111.71704" },
             ["26.1103.41825"] = {
                 aarch64 = {
                     url = "https://persistent.oaistatic.com/codex-app-prod/ChatGPT-darwin-arm64-26.1103.41825.zip",
@@ -248,6 +254,12 @@ package = {
                 aarch64 = {
                     url = "https://persistent.oaistatic.com/codex-app-prod/ChatGPT-darwin-arm64-26.1021.22027.zip",
                     sha256 = "cee1af5279d701c947dfe06d27eaf180e217a4392d117eb86f2f11a8141ce60e",
+                },
+            },
+            ["26.1111.71704"] = {
+                aarch64 = {
+                    url = "https://persistent.oaistatic.com/codex-app-prod/ChatGPT-darwin-arm64-26.1111.71704.zip",
+                    sha256 = "0c790d8ab58425539fe1d844066acb8b80415aa19a5c46d89409815112e8134d",
                 },
             },
         },
