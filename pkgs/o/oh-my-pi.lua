@@ -52,7 +52,7 @@ package = {
     xpm = {
         linux = {
             source = "https://github.com/can1357/oh-my-pi/releases/download/v${version}/omp-linux-${arch_alias}",
-            ["latest"] = { ref = "18.18.0" },
+            ["latest"] = { ref = "19.0.0" },
             ["18.4.10"] = {
                 arch_alias = { x86_64 = "x64", aarch64 = "arm64" },
                 sha256 = {
@@ -115,10 +115,20 @@ package = {
                     sha256 = "b394bfbf7c0e0ba82e01913defb5fadf14a6ea5a71ee05348070ab5e40187144",
                 },
             },
+            ["19.0.0"] = {
+                x86_64 = {
+                    url = "https://github.com/can1357/oh-my-pi/releases/download/v19.0.0/omp-linux-x64",
+                    sha256 = "c7cc5c8d505053c8ffaf180417e5d5c781235b9d936f286810560151120109bf",
+                },
+                aarch64 = {
+                    url = "https://github.com/can1357/oh-my-pi/releases/download/v19.0.0/omp-linux-arm64",
+                    sha256 = "6301041309d9bb26c19576ab116d828dba9c74654507cfa3594d62d310864626",
+                },
+            },
         },
         macosx = {
             source = "https://github.com/can1357/oh-my-pi/releases/download/v${version}/omp-darwin-${arch_alias}",
-            ["latest"] = { ref = "18.18.0" },
+            ["latest"] = { ref = "19.0.0" },
             ["18.4.10"] = {
                 arch_alias = { x86_64 = "x64", aarch64 = "arm64" },
                 sha256 = {
@@ -181,10 +191,20 @@ package = {
                     sha256 = "0adae2a341a1e6840b00c96ce0b1c9d2e0257b1ea6782e4302e17b717a6ffb0a",
                 },
             },
+            ["19.0.0"] = {
+                x86_64 = {
+                    url = "https://github.com/can1357/oh-my-pi/releases/download/v19.0.0/omp-darwin-x64",
+                    sha256 = "bbb3e9333c31fa5b892ce353dc678e7a67c25667307f5400ea07bd928163fb29",
+                },
+                aarch64 = {
+                    url = "https://github.com/can1357/oh-my-pi/releases/download/v19.0.0/omp-darwin-arm64",
+                    sha256 = "a5ee90b2ffcc0c1f031dbd4bedd4ff8e0c884ec8e69b700f4c5d76a1eae89daf",
+                },
+            },
         },
         windows = {
             source = "https://github.com/can1357/oh-my-pi/releases/download/v${version}/omp-windows-${arch_alias}.exe",
-            ["latest"] = { ref = "18.18.0" },
+            ["latest"] = { ref = "19.0.0" },
             ["18.4.10"] = {
                 arch_alias = { x86_64 = "x64", aarch64 = "arm64" },
                 sha256 = {
@@ -245,6 +265,16 @@ package = {
                 aarch64 = {
                     url = "https://github.com/can1357/oh-my-pi/releases/download/v18.18.0/omp-windows-arm64.exe",
                     sha256 = "4cb8c1ca84baab5a3f66febc54c979c184802e9efa75a99627e3bec446535be9",
+                },
+            },
+            ["19.0.0"] = {
+                x86_64 = {
+                    url = "https://github.com/can1357/oh-my-pi/releases/download/v19.0.0/omp-windows-x64.exe",
+                    sha256 = "36ac685c7b932f4bb81ccc5a7116abee90575d32110e74dd2a066e082690d941",
+                },
+                aarch64 = {
+                    url = "https://github.com/can1357/oh-my-pi/releases/download/v19.0.0/omp-windows-arm64.exe",
+                    sha256 = "2d884ed48bc3eeb313fd32d7dece4378c4f53840a4e2f3bf2aea7b27da05bc8f",
                 },
             },
         },
