@@ -40,6 +40,9 @@ tmux 3.8 e79c699c7e949dccd0a4a125e17b8d1261e311b16979dbc8eb34542f3966d82e
 htop 3.5.3 a8b164386494cb85bb255a415a3f5f80afe7a0c4491da5d113b3a0f951087e65
 procps-ng 4.0.5 c2e6d193cc78f84cd6ddb72aaf6d5c6a9162f0470e5992092057f5ff518562fa
 sudo 1.9.17p2 4a38a1ab3adb1199257edc2a7c4a2bd714665eb605b04368843b06dada2cfcfb
+# GNU publishes a signature, not a digest: gdb-18.1.tar.xz.sig verified against gnu-keyring.gpg
+# (DSA key F40ADB902B24264AA42E50BF92EDB04BFF325CF3), the sha256 measured, the same on sourceware.org.
+gdb 18.1 cd9fc3fe2b47743840e42c1592d3d87f8302eb18639c0b8b4ba0898002e2348f
 # Data (the same on every architecture).
 ncurses-terminfo.src 6.6.20261010 a3744d5463e70a37cc5ede622ea13cd42278a5cdeed7a90fd22cd23832c6de2e
 adwaita-icon-theme 49.0 65166461d1b278aa942f59aa8d0fccf1108d71c65f372c6266e172449791755c
@@ -66,3 +69,14 @@ djdev 2.05 4557dfb6c161d326680ae5fa71f0098ac49425a1b11b90a020b83162eb705dda
 djgpp-linux64 12.2.0 8464f17017d6ab1b2bb2df4ed82357b5bf692e6e2b7fee37e315638f3d505f00
 djgpp-osx 12.2.0 cf605786efe14166d32aede89c37e41bf1272178ae73a624e7e84761cca38549
 djgpp-mingw-standalone 12.2.0 6f88b531d216f4d92668c960b5cde9a829b5611e06d2c3e431041e33f01c1a52
+# Android NDK archives (dl.google.com; Google publishes SHA1 and size, both matched; sha256 measured).
+android-ndk-linux 30.0.16248370 753611f410d002cfcd3f3dc2ef49aad532089d3180b436c060a90bf0fcb64df2
+android-ndk-windows 30.0.16248370 b830098aaf18b67a42eb831c404e15e5f2990a474f054ac145b0bc957ac6d729
+# The llvm payload for Windows x86_64 as published (the digest the recipe names), and the upstream
+# release it was carved from (llvm-project's SLSA provenance attestation names this digest).
+llvm-windows-x86_64 23.1.3-r3 65dded778a0426a742c967e0e0d977a008e6a887c1ef590ff957433e83658f25
+clang+llvm-x86_64-pc-windows-msvc 23.1.3 7e69dc07a4536b79ff24a651a2611990bf8eaab17ea560f1092707c4f31ba01d
+# The FreeBSD bases as published at revision 1 (the digests the recipes named): the link inputs as
+# FreeBSD's release ships them, which revision 3 restores.
+x86_64-freebsd-sysroot 14.5 346158d8ee810d6d2bf735f513d6a7bc92ae54d18e7718146be6308a7e7fc6e8
+aarch64-freebsd-sysroot 14.5 68e84f928603aad765610bff7512eab1c09ab28dbbb91b806ba489996d90d3e6

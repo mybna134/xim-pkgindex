@@ -153,10 +153,10 @@ Some rules span every recipe, and each has its own test or script:
 |---|---|
 | dependency coordinates and the split `deps` form | `tests/test_dep_query_coordinates.py`, `tests/test_deps_shape.py` |
 | no compiler runtime in a library payload | `tests/test_no_compiler_runtime_in_payloads.py` |
+| a dirun profile a recipe writes parses as TOML | `tests/test_dirun_profiles.py` |
 | a published Luban version's output never changes | `tests/test_luban_published.py` |
 | a changed resource raises `revision` | `.github/scripts/check-revision.lua` |
 | `floor` is an integer within `0 ≤ floor ≤ revision`, on the version entry | `.github/scripts/check-revision.lua` |
-| no hard link in a payload | `.github/scripts/check-payload-hard-links.py` |
 | a dependency's namespace resolves in this index | `.github/scripts/check-dep-namespace.sh` |
 | no host package manager in workflows or scripts | `tools/lint_host_deps.sh` |
 | the docs' structure and links | `tests/test_docs.py` |
@@ -170,6 +170,7 @@ Some rules span every recipe, and each has its own test or script:
 | `ci-tools.yml` | a change to `tools/`, `scripts/` or workflows | the tools' own tests and the repository lints |
 | `ci-sweep.yml` | weekly | installs one slice of every recipe, by ISO week |
 | `luban-agent-workspace.yml` | a change to Luban's recipes or what they pin | builds and boots the editions on x86_64 and aarch64 |
+| `llvm-payload.yml` | a change to `pkgs/l/llvm.lua` or to the check | on every host a changed llvm version is served on (Linux x86_64 and aarch64, macOS arm64, Windows x86_64), the archive the recipe names compiles one object with zlib-compressed and one with zstd-compressed debug sections with its own clang, and links each with the `ld.lld` beside that clang; an archive the index makes is built first |
 | `site-check.yml` | a change to `pkgs/`, `docs/` or the site config | builds the site in strict mode |
 
 L3 and L4 run in CI only for what a change touched and in the weekly sweep: a

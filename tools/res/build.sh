@@ -23,6 +23,7 @@
 #   htop          a static htop (musl; ncurses) and the terminfo it needs
 #   procps-ng     static ps, top, free, pgrep, pkill, pidof, uptime, vmstat, watch (musl; ncurses) and terminfo
 #   sudo          a static sudo and visudo (musl; no PAM, sudoers built in)
+#   gdb           static gdb and gdbserver (musl; GMP, MPFR, expat, zlib, zstd, xz, ncurses: the TUI) and terminfo
 #   wl-clipboard  static wl-copy / wl-paste (musl; libwayland built static)
 #   xsel          a static xsel (musl; libX11/xcb static)
 #   edk2-firmware the UEFI firmware qemu ships, decompressed (no build)
@@ -51,7 +52,13 @@
 #   terminfo        the terminal descriptions (ncurses' terminfo.src, compiled)
 #   adwaita-cursors GNOME's Adwaita cursor theme, and the default theme naming it
 #   luban-fonts     the fonts the Luban OS window ships with
+#   android-ndk-libcxx-modules  an NDK release's libc++ module sources, for its Windows archive
 #   sample-music    luban:sample-music, a piece to play (the Open Goldberg Variations' Aria, CC0)
+#
+# Corrective revisions of a published archive, derived from the archive of the
+# revision before (revision.py; no build):
+#   llvm            the llvm payload for Windows x86_64, with the lld names clang's driver runs
+#   x86_64-freebsd-sysroot, aarch64-freebsd-sysroot  a FreeBSD base, an earlier revision's files
 #
 # Runs on the machine of the target architecture (CI: ubuntu-24.04 and
 # ubuntu-24.04-arm). What it needs runs in a pinned container: the runner
@@ -132,8 +139,9 @@ seal() {    # file -> file.sha256
     log "$(cat "$1.sha256")"
 }
 
-# Never a hard link in a payload: xlings extracts one with link(2), which
-# Android's app sandbox and FAT refuse (.github/scripts/check-payload-hard-links.py).
+# Never a hard link in a payload this index builds: Android's app sandbox and FAT
+# refuse link(2). The client copies a refused one from 2026.10.10.2 (the index
+# floor); a payload that needs no copy installs the same everywhere.
 pack() {    # directory under $work [contents only] -> $out/<name>-<version>-linux-<arch>.tar.gz
     local file="$out/$what-$version-linux-$arch.tar.gz"
     if [[ "${2:-}" == contents ]]; then
@@ -536,6 +544,95 @@ sudo)
     "$work/$d/sbin/visudo" -c -q -f "$work/sudoers.check" || die "visudo does not accept a plain sudoers"
     provenance "$d" "sudo $version (www.sudo.ws, sha256 $(input sudo "$version")): static (musl), no PAM (shadow), sudoers built in; Alpine 3.20"
     pack "$d" ;;
+gdb)
+    # The GNU debugger and its remote server, static (musl): it runs on any
+    # Linux of the architecture and debugs what runs there. Alpine 3.20's
+    # static archives: GMP and MPFR (gdb requires both), expat (XML target
+    # descriptions, the system call tables), zlib, zstd and xz (compressed
+    # debug sections, MiniDebugInfo), ncursesw (the TUI). No Python, Guile,
+    # debuginfod, source-highlight, NLS or simulator; no in-process agent (a
+    # shared library). gdb relocates a directory under its prefix to where its
+    # own binary is: share/gdb is found beside bin/gdb wherever the payload
+    # is, and, as no lib/debug is beside it, separate debug files are looked
+    # for in /usr/lib/debug. The terminfo of the terminals it meets in
+    # share/terminfo, which the recipe names in TERMINFO_DIRS. The manual is
+    # not built (MAKEINFO=true): the build tree's GDBvn.texi is newer than
+    # the release's gdb.info, and the payload carries no manual. gdb links
+    # through libtool, for which -static keeps only libtool's own libraries
+    # static (the first build's gdb named the musl loader): it is linked again
+    # with -all-static. gdbserver links with the compiler, which reads
+    # LDFLAGS=-static; so do the configure scripts the build runs, which is
+    # why -all-static is not the build's LDFLAGS.
+    source_of gdb "$version" "https://ftpmirror.gnu.org/gnu/gdb/gdb-$version.tar.xz" "$work/src.tar.xz"
+    d="gdb-$version-linux-$arch"
+    libs="gmp-dev mpfr-dev expat-static zlib-static zstd-static xz-static ncurses-static"
+    terms="xterm xterm-256color screen screen-256color tmux tmux-256color foot foot-direct linux vt100 vt220 dumb"
+    # What it debugs below: a static program, its DWARF as written (t) and
+    # compressed with zstd (tz).
+    printf 'int add(int a, int b) { return a + b; }\nint main(void) { return add(40, 2) == 42 ? 7 : 1; }\n' > "$work/t.c"
+    alpine "apk add -q $APK_STATIC xz pkgconf $libs expat-dev zlib-dev zstd-dev xz-dev ncurses-dev \
+            ncurses-terminfo-base ncurses-terminfo \
+        && apk info -v 2>/dev/null | sort > /w/installed \
+        && tar -xJf src.tar.xz && mkdir build && cd build \
+        && ../gdb-$version/configure --prefix=/usr --disable-nls --disable-werror --disable-shared --disable-sim \
+             --disable-inprocess-agent --disable-source-highlight --enable-tui --with-system-zlib --with-zstd \
+             --with-expat --with-libexpat-type=static --with-lzma --with-liblzma-type=static \
+             --without-python --without-guile --without-debuginfod --without-intel-pt --without-xxhash \
+             CFLAGS=-O2 CXXFLAGS=-O2 LDFLAGS=-static > /w/configure.log 2>&1 \
+        && make -j\$(nproc) MAKEINFO=true all-gdb all-gdbserver > /w/make.log 2>&1 \
+        && rm gdb/gdb && make -C gdb MAKEINFO=true LDFLAGS=-all-static gdb >> /w/make.log 2>&1 \
+        && make -C gdb/data-directory install DESTDIR=/w/stage > /w/install.log 2>&1 \
+        && mkdir -p /w/$d/bin /w/$d/share/terminfo && cp gdb/gdb gdbserver/gdbserver /w/$d/bin/ && strip /w/$d/bin/* \
+        && cp -a /w/stage/usr/share/gdb /w/$d/share/ \
+        && for t in $terms; do f=\$(find /usr/share/terminfo /etc/terminfo -name \"\$t\" 2>/dev/null | head -1); \
+             [ -n \"\$f\" ] || { echo \"no terminfo for \$t\" >&2; exit 1; }; \
+             mkdir -p /w/$d/share/terminfo/\$(basename \$(dirname \$f)); cp \"\$f\" /w/$d/share/terminfo/\$(basename \$(dirname \$f))/; done \
+        && cd /w && gcc -g -O0 -static -o t t.c && objcopy --compress-debug-sections=zstd t tz && readelf -t tz | grep -q ZSTD" \
+      || { for f in configure make install; do [[ -f "$work/$f.log" ]] && { log "--- $f.log"; tail -40 "$work/$f.log" >&2; }; done; die "gdb build failed"; }
+    static_only "$work/$d/bin/gdb" "$work/$d/bin/gdbserver"
+    g="$work/$d/bin/gdb"
+    v="$("$g" --version)"; grep -qF "GNU gdb (GDB) $version" <<< "$v" || die "gdb does not report $version: $v"
+    v="$("$work/$d/bin/gdbserver" --version)"; grep -qF "GNU gdbserver (GDB) $version" <<< "$v" || die "gdbserver does not report $version: $v"
+    conf="$("$g" --configuration)"
+    for want in --with-expat --with-lzma --with-curses --enable-tui --without-python --without-guile \
+                --without-debuginfod '--with-gdb-datadir=/usr/share/gdb (relocatable)'; do
+        grep -qF -- "$want" <<< "$conf" || die "gdb is not configured $want: $conf"
+    done
+    [[ -f "$work/$d/share/terminfo/x/xterm-256color" ]] || die "no xterm-256color terminfo"
+    seen() {    # what, a session's output, the lines it must hold (each logged)
+        local what="$1" said="$2" want; shift 2
+        for want in "$@"; do
+            grep -qF -- "$want" <<< "$said" || die "$what: no '$want' in: $said"
+            log "$what: $(grep -F -m1 -- "$want" <<< "$said")"
+        done
+    }
+    session() { timeout 120 "$g" -nx -batch "$@" 2>&1; }
+    # It debugs, on the runner (a container may refuse ptrace): the program
+    # stops at a breakpoint, its stack and a value are read, it exits with
+    # its status -- from DWARF as written, compressed with zstd, and through
+    # gdbserver, whose target description gdb reads as XML.
+    for p in t tz; do
+        said="$(session -ex 'break add' -ex run -ex bt -ex 'print a * b' -ex continue "$work/$p")" || die "gdb on $p: $said"
+        seen "gdb on $p" "$said" 'Breakpoint 1, add (a=40, b=2) at t.c:1' 'in main () at t.c:2' '$1 = 80' 'exited with code 07'
+    done
+    said="$(session -ex "target remote | $work/$d/bin/gdbserver - $work/t" -ex 'break add' -ex continue -ex bt -ex continue "$work/t")" \
+        || die "gdb through gdbserver: $said"
+    seen "gdb through gdbserver" "$said" 'Remote debugging using stdio' 'Breakpoint 1, add (a=40, b=2) at t.c:1' 'exited with code 07'
+    # A program of the runner's, linked against its glibc: its libraries are
+    # read and the system call it ends with is caught by name. A static gdb
+    # cannot load the program's libthread_db; what it says of that is logged.
+    said="$(session -ex 'catch syscall exit_group' -ex run -ex 'info sharedlibrary' /bin/true)" || die "gdb on /bin/true: $said"
+    seen "gdb on the runner's /bin/true" "$said" 'Catchpoint 1 (call to syscall exit_group)' 'libc.so.6'
+    log "gdb on the runner's /bin/true: $(grep -F -m1 libthread_db <<< "$said" || echo 'nothing of libthread_db')"
+    # Moved elsewhere, it finds its data directory beside it and reads the
+    # system call tables there.
+    mkdir "$work/moved" && mv "$work/$d" "$work/moved/"
+    said="$(timeout 120 "$work/moved/$d/bin/gdb" -nx -batch -ex 'show data-directory' -ex 'show debug-file-directory' \
+            -ex 'catch syscall write' "$work/t" 2>&1)" || die "gdb, moved: $said"
+    mv "$work/moved/$d" "$work/"
+    seen "gdb, moved" "$said" "\"$(realpath "$work/moved")/$d/share/gdb\"" '"/usr/lib/debug"' "Catchpoint 1 (syscall 'write' ["
+    provenance "$d" "GNU gdb $version (ftpmirror.gnu.org, sha256 $(input gdb "$version")): gdb and gdbserver, static, built in Alpine 3.20 (musl) with $(grep -E "^(${libs// /|})-[0-9]" "$work/installed" | tr '\n' ' ')(Alpine's static archives); the TUI; no Python, Guile, debuginfod, source-highlight, NLS, simulator or in-process agent; share/gdb found beside bin/gdb; terminfo for: $terms. Checked where it was built: a static program debugged from its DWARF as written and compressed with zstd, and through gdbserver; a program linked against that machine's glibc"
+    pack "$d" ;;
 wl-clipboard)
     source_of wl-clipboard "$version" "https://github.com/bugaevc/wl-clipboard/archive/refs/tags/v$version.tar.gz" "$work/src.tar.gz"
     wv="$(awk '$1 == "wayland" { print $2 }' "$here/inputs.txt")"
@@ -786,6 +883,68 @@ i586-pc-msdosdjgpp-gcc)
         python3 -c 'import sys, tarfile; sys.exit(any(m.islnk() for m in tarfile.open(sys.argv[1])))' "$file" \
             || die "$file holds a hard link"
     done ;;
+llvm)
+    # The llvm payload for Windows x86_64 at a corrective revision: the archive
+    # of the revision before, its directory renamed, with ld.lld.exe,
+    # ld64.lld.exe and wasm-ld.exe added -- the files of these names in
+    # upstream's release, each the program the archive already ships as
+    # lld-link.exe (checked here, byte for byte). clang's driver links an ELF
+    # target with ld.lld, Mach-O with ld64.lld and WebAssembly with wasm-ld,
+    # looking beside itself first and then on PATH; the archive carried none of
+    # them, so a link for x86_64-freebsd on a Windows host ran the ld.lld of the
+    # host's PATH, which reads no zlib-compressed section (mcpp-platforms run
+    # 44123489011), while the archive's own lld reads zlib and zstd.
+    upstream="${version%%-r*}"
+    case "$version" in
+        23.1.3-r4) from=23.1.3-r3 ;;
+        *) die "llvm: no derivation recorded for $version" ;;
+    esac
+    command -v zstd >/dev/null || die "llvm: no zstd to read upstream's .tar.zst"
+    d="llvm-$version-windows-x86_64"
+    up="clang+llvm-$upstream-x86_64-pc-windows-msvc"
+    source_of llvm-windows-x86_64 "$from" \
+        "https://github.com/xlings-res/llvm/releases/download/$from/llvm-$from-windows-x86_64.zip" "$work/from.zip"
+    source_of clang+llvm-x86_64-pc-windows-msvc "$upstream" \
+        "https://github.com/llvm/llvm-project/releases/download/llvmorg-$upstream/$up.tar.zst" "$work/upstream.tar.zst"
+    lld="$(python3 -I "$here/revision.py" digest "$work/from.zip" "llvm-$from-windows-x86_64/bin/lld-link.exe")"
+    # Upstream's archive is zstd with a 1 GiB window.
+    zstd -dc --long=31 "$work/upstream.tar.zst" \
+        | python3 -I "$here/revision.py" tar-digests bin/lld-link.exe bin/lld.exe bin/ld.lld.exe bin/ld64.lld.exe bin/wasm-ld.exe \
+        > "$work/upstream.sha256"
+    rm -f "$work/upstream.tar.zst"
+    while read -r sha name; do
+        [[ "$sha" == "$lld" ]] || die "upstream's $name ($sha) is not the lld-link.exe of llvm $from ($lld)"
+    done < "$work/upstream.sha256"
+    printf '%s\n' "llvm $version for Windows x86_64: the archive of llvm $from (xlings-res/llvm, sha256 $(input llvm-windows-x86_64 "$from")), its directory renamed, with bin/ld.lld.exe, bin/ld64.lld.exe and bin/wasm-ld.exe added -- the files of these names in $up.tar.zst (github.com/llvm/llvm-project, release llvmorg-$upstream, sha256 $(input clang+llvm-x86_64-pc-windows-msvc "$upstream")), each byte-identical to that release's bin/lld-link.exe and to the archive's own (sha256 $lld); no other file changed. clang's driver links an ELF target with ld.lld, Mach-O with ld64.lld and WebAssembly with wasm-ld, found beside it." \
+        > "$work/README.provenance"
+    python3 -I "$here/revision.py" zip "$work/from.zip" "$out/$d.zip" "llvm-$from-windows-x86_64" "$d" \
+        --same bin/lld-link.exe=bin/ld.lld.exe --same bin/lld-link.exe=bin/ld64.lld.exe \
+        --same bin/lld-link.exe=bin/wasm-ld.exe --add "README.provenance=$work/README.provenance" \
+        || die "llvm $version: the derived archive is not llvm $from with the lld names"
+    seal "$out/$d.zip" ;;
+x86_64-freebsd-sysroot|aarch64-freebsd-sysroot)
+    # A FreeBSD base at a corrective revision: the archive of an earlier
+    # revision, its directory renamed, every file that archive's. 14.5-r3 is
+    # revision 1's files -- the crt objects and static archives as FreeBSD's
+    # release ships them, their debug sections zlib-compressed. Revision 2 had
+    # decompressed them for a Windows host whose link ran an lld without zlib;
+    # the llvm payload's own ld.lld reads them (llvm 23.1.3-r4). How the base
+    # is assembled from the release: .agents/tools/build-freebsd-sysroot.py.
+    case "$version" in
+        14.5-r3) from=14.5 ;;
+        *) die "$what: no derivation recorded for $version" ;;
+    esac
+    d="$what-$version"
+    source_of "$what" "$from" \
+        "https://github.com/xlings-res/$what/releases/download/$from/$what-$from.tar.xz" "$work/from.tar.xz"
+    printf '%s\n' "$what $version: the archive of $what $from (xlings-res/$what, sha256 $(input "$what" "$from")), its directory renamed; every other file is that archive's, assembled from FreeBSD's release as its PROVENANCE.md states, the link inputs as the release ships them." \
+        > "$work/README.provenance"
+    python3 -I "$here/revision.py" tar "$work/from.tar.xz" "$out/$d.tar.xz" "$what-$from" "$d" \
+        --add "README.provenance=$work/README.provenance" \
+        || die "$what $version: the derived archive is not $what $from renamed"
+    python3 -c 'import sys, tarfile; sys.exit(any(m.islnk() for m in tarfile.open(sys.argv[1])))' "$out/$d.tar.xz" \
+        || die "$d holds a hard link"
+    seal "$out/$d.tar.xz" ;;
 bash|coreutils|openssl|binutils)
     v="${version%%-r[0-9]*}"   # <upstream>-rN: this index's Nth build of it; the payload keeps the name
     case "$what" in
@@ -1233,6 +1392,32 @@ luban-fonts)
     cp "$work/noto.LICENSE" "$l/NotoSansCJK-OFL.txt"
     for x in "$f"/*; do file -b "$x" | grep -Eq "TrueType|OpenType" || die "$(basename "$x") is not a font: $(file -b "$x")"; done
     provenance "$d" "luban-fonts $version: JetBrains Mono 2.304 (Regular, Bold), Inter 4.1 (Regular), Sarasa Mono SC 1.0.42 (Regular, Bold), Noto Sans SC 2.004 (Regular, subset OTF), Fusion Pixel 12px proportional zh_hans 2026.09.25 -- from their GitHub releases, digests in tools/res/inputs.txt; licenses in share/licenses/luban-fonts"
+    pack_data "$d" ;;
+android-ndk-libcxx-modules)
+    # The libc++ module sources (share/libc++/v1) of an NDK release, which its
+    # Windows archive omits (docs/android-ndk-libcxx-modules.md). Taken from
+    # the same release's Linux archive after checking both are that release,
+    # built from one clang revision, with byte-identical libc++ headers.
+    case "$version" in
+        30.0.16248370) release=r30 ;;
+        *) die "android-ndk-libcxx-modules: no release name recorded for $version" ;;
+    esac
+    for host in linux windows; do
+        source_of "android-ndk-$host" "$version" \
+            "https://dl.google.com/android/repository/android-ndk-$release-$host.zip" "$work/$host.zip"
+    done
+    d="android-ndk-libcxx-modules-$version"
+    # The darwin archive ships its own sources; they are compared by CRC-32 and size through
+    # its central directory, read with range requests, so the one payload is every host's.
+    python3 -I "$here/android-ndk/libcxx_modules.py" extract "$version" "$work/linux.zip" "$work/windows.zip" "$work/$d" \
+        "https://dl.google.com/android/repository/android-ndk-$release-darwin.zip" \
+        || die "the NDK archives do not support taking one host's module sources for another"
+    rm -f "$work/linux.zip" "$work/windows.zip"
+    [[ -f "$work/$d/share/libc++/v1/std.cppm" && -f "$work/$d/share/libc++/v1/std.compat.cppm" ]] || die "no std.cppm or std.compat.cppm"
+    (cd "$work/$d" && sha256sum -c --quiet MANIFEST) || die "MANIFEST does not describe the files"
+    provenance "$d" "android-ndk-libcxx-modules $version: share/libc++/v1 of android-ndk-$release-linux.zip (dl.google.com, sha256 $(input android-ndk-linux "$version")), unmodified; android-ndk-$release-windows.zip (sha256 $(input android-ndk-windows "$version")) checked to be the same Pkg.Revision and clang revision with byte-identical sysroot/usr/include/c++/v1 and no share/libc++/v1; licence: NOTICE.toolchain of that release"
+    # Modes from no umask, so every machine packs the same bytes.
+    chmod -R u=rwX,go=rX "$work/$d"
     pack_data "$d" ;;
 qt-runtime)
     # luban:qt-runtime: what LXQt and KDE share (design 2026-10-18 §13.5) --
