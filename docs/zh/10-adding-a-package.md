@@ -122,6 +122,20 @@ deps = {
   声明 loader 依赖：声明了 `xim:glibc`，elfpatch 就会替换它的 `DT_RPATH`，自带的库全部
   失联，而安装仍然报告成功。依据实测的 `DT_NEEDED` 闭包判断
   （`LD_TRACE_LOADED_OBJECTS=1 <bin>`），并在测试中真正运行一次程序 —— `--version` 看不出来。
+- 载荷以 `dlopen()` 加载的库同样是 runtime 依赖：xlings 按 runtime 依赖写出载荷的
+  `DT_RUNPATH`，而带 `DT_RUNPATH` 的对象发起的 `dlopen()`，glibc 只在其中、`LD_LIBRARY_PATH`
+  与系统目录中查找，不查找加载它的程序的 `DT_RPATH`（`slint`）。
+
+## 版本号
+
+- 版本键是上游的版本，按上游的写法（`binutils` 2.47、`linux-headers` 6.18.64）。
+- 同一上游版本的重新打包 —— 以其他依赖重建、修正归档、改变布局 —— 是该版本项的
+  `revision`，配新的资源（`<版本>-r<N>`），不新增版本键
+  （[XPackage V2](../specs/xpackage-v2.md#revision--a-packaging-change-under-an-unchanged-version)）。
+- 来自另一源码树的构建 —— 带有上游尚未发布的修正的上游版本 —— 使用自己的键，并带预发布
+  标记（`ninja` 1.13.2-mcpp.1）。
+- 已发布的键不改名、不删除。此规则之前的键保持原样（`binutils` 2.42.1，即 2.42 的载荷）；
+  此后的版本遵循此规则。
 
 ## 保证包正确的规则
 
@@ -133,8 +147,14 @@ deps = {
 - **config 的效果由 `revision` 标识。** 改变 `config()` 注册、链接、声明或写出的内容时，
   提高版本项的 `revision`，否则已经配置过的 scope 永远看不到变化。`config()` 不把 scope
   相关的数据写进共享的载荷。
-- **载荷中不能有硬链接。** xlings 用 `link(2)` 解出硬链接，Android 应用沙箱和 FAT 会拒绝
-  （`payload-hard-links.yml`）。打包时用 `tar --hard-dereference`。
+- **预编译的原生程序原样取来，不由脚本挑选。** 优先直接取平台归档（`esbuild`、`codex`）；只有包管理器一种分发方式时，
+  关掉它的安装脚本、在配方里选定平台包（`bun`、`openclaw`）。运行自己下载的二进制的脚本，运行时 xlings 还没有改写它的
+  loader：在没有 `/lib64/ld-linux-x86-64.so.2` 的宿主上（Alpine；Windows、macOS 上每一次安装都经过的 Luban host machine）
+  这要到 xlings 2026.11.22.1 才可行，在 glibc 比二进制要求的旧的宿主上则始终不行。`native-binary-hosts.yml` 在这两种假设都
+  不成立的地方安装这些配方。
+- **归档中的硬链接由客户端处理。** Android 应用沙箱、FAT 和 exFAT 会拒绝 `link(2)`；
+  从本索引的最低版本 xlings 2026.10.10.2（`index-compat.json`）起，解包时被拒绝的硬链接改为复制。
+  上游归档按原样镜像；本索引自建的载荷仍用 `tar --hard-dereference` 打包（`tools/res/build.sh`）。
 - **钩子不从环境猜测架构**：2026.10.8.1 之前的客户端在钩子中没有 `os.arch()`，要从载荷
   内容判断（对它带的 loader 用 `os.isfile`）。
 
