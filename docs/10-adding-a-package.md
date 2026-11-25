@@ -136,6 +136,26 @@ deps = {
   its own libraries stop being found while the install reports success. Decide
   from the measured `DT_NEEDED` closure (`LD_TRACE_LOADED_OBJECTS=1 <bin>`), and
   run the program once in its test — `--version` does not show it.
+- A library the payload loads with `dlopen()` is a runtime dependency too:
+  xlings writes the payload's `DT_RUNPATH` from its runtime dependencies, and
+  glibc resolves a `dlopen()` issued by an object that has `DT_RUNPATH` only
+  there, in `LD_LIBRARY_PATH` and in the system directories — never in the
+  `DT_RPATH` of the program that loaded it (`slint`).
+
+## Versions
+
+- A version key is the upstream version, as upstream writes it (`binutils`
+  2.47, `linux-headers` 6.18.64).
+- A repackaging of the same upstream version — a rebuild against other
+  dependencies, a corrected archive, a changed layout — is a `revision` of that
+  version entry with a new asset (`<version>-r<N>`), never a new version key
+  ([XPackage V2](specs/xpackage-v2.md#revision--a-packaging-change-under-an-unchanged-version)).
+- A build from another source tree — an upstream version with a correction
+  upstream has not released — is a key of its own with a prerelease marker
+  (`ninja` 1.13.2-mcpp.1).
+- A published key is never renamed or removed. Keys made before this rule
+  stay as they are (`binutils` 2.42.1, the 2.42 payload); later versions
+  follow it.
 
 ## Rules that keep packages correct
 
@@ -151,9 +171,20 @@ deps = {
   registers, links, declares or writes raises the version entry's `revision`, or
   scopes that already configured it never see the change. `config()` never
   writes scope-specific data into the shared payload.
-- **No hard links in a payload.** xlings extracts them with `link(2)`, which
-  Android's app sandbox and FAT refuse (`payload-hard-links.yml`). Pack with
-  `tar --hard-dereference`.
+- **A prebuilt native program is fetched as it is, not picked by a script.** Prefer
+  a platform archive taken directly (`esbuild`, `codex`); where a package manager
+  is the only distribution, install with its install scripts off and choose the
+  platform package in the recipe (`bun`, `openclaw`). A script that runs the
+  binary it downloads does so before xlings rewrites its loader: on a host without
+  `/lib64/ld-linux-x86-64.so.2` (Alpine; the Luban host machine every Windows and
+  macOS install goes through) that worked only since xlings 2026.11.22.1, and on a
+  host whose glibc is older than the binary needs it never does.
+  `native-binary-hosts.yml` installs these recipes where both assumptions fail.
+- **Hard links in an archive are the client's to handle.** Android's app
+  sandbox, FAT and exFAT refuse `link(2)`; from xlings 2026.10.10.2, this
+  index's floor (`index-compat.json`), extraction copies a refused hard link.
+  An upstream archive is mirrored as published. Payloads this index builds
+  still pack with `tar --hard-dereference` (`tools/res/build.sh`).
 - **A hook does not guess the architecture from its environment** on clients
   before 2026.10.8.1, where `os.arch()` is absent in hooks: detect from the
   payload's content (`os.isfile` on the loader it ships).
