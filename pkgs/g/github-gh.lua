@@ -39,7 +39,7 @@ package = {
     xpm = {
         linux = {
 
-            ["latest"] = { ref = "2.104.0" },
+            ["latest"] = { ref = "2.105.0" },
             ["2.92.0"] = {
                 url = "https://github.com/cli/cli/releases/download/v2.92.0/gh_2.92.0_linux_amd64.tar.gz",
                 sha256 = "b57848131bdf0c229cd35e1f2a51aa718199858b2e728410b37e89a428943ec4",
@@ -53,14 +53,14 @@ package = {
                 sha256 = nil,
             },
             -- ["2.86.0"] = "XLINGS_RES",
-            ["2.104.0"] = {
-                url = "https://github.com/cli/cli/releases/download/v2.104.0/gh_2.104.0_linux_amd64.tar.gz",
-                sha256 = "98cb101ad87dbbd3f6b2f2bfcbd43197ccd07643140121d8a9cfaa91eadbc24e",
+            ["2.105.0"] = {
+                url = "https://github.com/cli/cli/releases/download/v2.105.0/gh_2.105.0_linux_amd64.tar.gz",
+                sha256 = "79e7ab5db738c48777b696e374f8b428f0647debfb424f44d2f426370407fe2f",
             },
         },
         macosx = {
 
-            ["latest"] = { ref = "2.104.0" },
+            ["latest"] = { ref = "2.105.0" },
             ["2.92.0"] = {
                 url = "https://github.com/cli/cli/releases/download/v2.92.0/gh_2.92.0_macOS_amd64.zip",
                 sha256 = "ae9bb327ab0d91071bdada79f8f14034a2a0f19b0e001835a782eafa519d2af0",
@@ -74,14 +74,14 @@ package = {
                 sha256 = nil,
             },
             -- ["2.86.0"] = "XLINGS_RES",
-            ["2.104.0"] = {
-                url = "https://github.com/cli/cli/releases/download/v2.104.0/gh_2.104.0_macOS_amd64.zip",
-                sha256 = "a8c2a708dbae89dc7c05ba7b0beafc95bd8d09ab4a3505467b77d32ebf364dc6",
+            ["2.105.0"] = {
+                url = "https://github.com/cli/cli/releases/download/v2.105.0/gh_2.105.0_macOS_amd64.zip",
+                sha256 = "23602cbccbbdc6285a8520745b714cb927ce2ca621779373c2a20cd8e33fda66",
             },
         },
         windows = {
 
-            ["latest"] = { ref = "2.104.0" },
+            ["latest"] = { ref = "2.105.0" },
             ["2.92.0"] = {
                 url = "https://github.com/cli/cli/releases/download/v2.92.0/gh_2.92.0_windows_amd64.zip",
                 sha256 = "b6a8df3c8c6b9c80f290906387673bc4d272840f3789c5650e0e4e6e75522785",
@@ -95,9 +95,9 @@ package = {
                 sha256 = nil,
             },
             -- ["2.86.0"] = "XLINGS_RES",
-            ["2.104.0"] = {
-                url = "https://github.com/cli/cli/releases/download/v2.104.0/gh_2.104.0_windows_amd64.zip",
-                sha256 = "08c06d10482f12c478018cd259f64acbd5f625712cadf331aad19ba973c879e5",
+            ["2.105.0"] = {
+                url = "https://github.com/cli/cli/releases/download/v2.105.0/gh_2.105.0_windows_amd64.zip",
+                sha256 = "8813a72c899900afaa10e3fec8fbc64b908c89dbfe837e95ed2fa500fc140627",
             },
         },
     },
