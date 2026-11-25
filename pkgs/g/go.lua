@@ -79,8 +79,8 @@ package = {
             },
             ["1.27.4"] = {
                 url = {
-                    CN = "https://mirrors.nju.edu.cn/golang/go1.27.4.linux-amd64.tar.gz",
                     GLOBAL = "https://go.dev/dl/go1.27.4.linux-amd64.tar.gz",
+                    CN = "https://mirrors.nju.edu.cn/golang/go1.27.4.linux-amd64.tar.gz",
                 },
                 sha256 = "7226736c2339719cda28fbf3a54d71aa63bcefe376e98cef00034268dab24840",
             },
@@ -105,8 +105,8 @@ package = {
             },
             ["1.27.4"] = {
                 url = {
-                    CN = "https://mirrors.nju.edu.cn/golang/go1.27.4.darwin-arm64.tar.gz",
                     GLOBAL = "https://go.dev/dl/go1.27.4.darwin-arm64.tar.gz",
+                    CN = "https://mirrors.nju.edu.cn/golang/go1.27.4.darwin-arm64.tar.gz",
                 },
                 sha256 = "91a44a2b8a716600ad94a4f143e156116620db8828086a6e3602291be9bd0bb4",
             },
@@ -131,8 +131,8 @@ package = {
             },
             ["1.27.4"] = {
                 url = {
-                    CN = "https://mirrors.nju.edu.cn/golang/go1.27.4.windows-amd64.zip",
                     GLOBAL = "https://go.dev/dl/go1.27.4.windows-amd64.zip",
+                    CN = "https://mirrors.nju.edu.cn/golang/go1.27.4.windows-amd64.zip",
                 },
                 sha256 = "178ab98950ac69ab25069307dc6ade79f3816e414cce95b4da166a115cde1e7e",
             },
