@@ -142,10 +142,10 @@ class TestVerify:
 |---|---|
 | 依赖坐标与分离的 `deps` 写法 | `tests/test_dep_query_coordinates.py`、`tests/test_deps_shape.py` |
 | 库载荷中没有编译器运行时 | `tests/test_no_compiler_runtime_in_payloads.py` |
+| 配方写出的 dirun 配置可按 TOML 解析 | `tests/test_dirun_profiles.py` |
 | 已发布的 Luban 版本输出不变 | `tests/test_luban_published.py` |
 | 资源变化时提高 `revision` | `.github/scripts/check-revision.lua` |
 | `floor` 是 `0 ≤ floor ≤ revision` 的整数，写在版本项上 | `.github/scripts/check-revision.lua` |
-| 载荷中没有硬链接 | `.github/scripts/check-payload-hard-links.py` |
 | 依赖的命名空间在本索引中可解析 | `.github/scripts/check-dep-namespace.sh` |
 | workflow 和脚本中不调用宿主包管理器 | `tools/lint_host_deps.sh` |
 | 文档的结构与链接 | `tests/test_docs.py` |
@@ -159,6 +159,8 @@ class TestVerify:
 | `ci-tools.yml` | `tools/`、`scripts/` 或 workflow 有改动 | 工具自己的测试与仓库 lint |
 | `ci-sweep.yml` | 每周 | 按 ISO 周次安装所有配方中的一片 |
 | `luban-agent-workspace.yml` | Luban 的配方或它们锁定的包有改动 | 在 x86_64 和 aarch64 上构建并启动 edition |
+| `llvm-payload.yml` | `pkgs/l/llvm.lua` 或该检查本身有改动 | 在改动的 llvm 版本所服务的每个宿主上（Linux x86_64 与 aarch64、macOS arm64、Windows x86_64），配方所指的归档以它自己的 clang 编译一个调试段为 zlib 压缩、一个为 zstd 压缩的对象，并以该 clang 旁边的 `ld.lld` 各链接一次；本索引自制的归档先构建 |
+| `native-binary-hosts.yml` | 带预编译原生程序的配方（bun、esbuild、codex、各 agent）有改动；每晚 | 在 Alpine x86_64 与 aarch64（没有 glibc loader）、Ubuntu 20.04（最旧的 glibc）以及按 Luban host machine 造的根（静态的 xlings、busybox 与 bwrap；装 Luban 的 agent 工具集）里安装它们，用已发布的 xlings 或指定 run 的构建 |
 | `site-check.yml` | `pkgs/`、`docs/` 或站点配置有改动 | 以 strict 模式构建站点 |
 
 L3 和 L4 在 CI 中只针对改动涉及的包运行，以及在每周轮转中运行：每次推送都在每个平台上
