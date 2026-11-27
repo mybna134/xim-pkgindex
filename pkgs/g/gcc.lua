@@ -64,7 +64,7 @@ package = {
                 "xim:gcc-specs-config@0.0.1",
                 },
             },
-            ["latest"] = { ref = "16.1.0" },
+            ["latest"] = { ref = "16.2.0" },
             -- aarch64: built natively on an arm runner as x86_64's was
             -- (tools/res/build.sh gcc: fromsource:gcc's configure, against a
             -- sysroot of xim:glibc + xim:linux-headers), C++23 `import std`
@@ -89,7 +89,7 @@ package = {
                 },
             },
             -- 16.2.0: the GNU release (signature checked), built as 16.1.0 is
-            -- (tools/res/build.sh gcc). `latest` stays 16.1.0.
+            -- (tools/res/build.sh gcc), and `latest`.
             -- 1: 16.2.0-r1 -- built again with the binutils and kernel headers
             -- this recipe declares: binutils 2.47 is the target's assembler
             -- and linker while gcc is configured and built (GCC decides from
@@ -658,16 +658,17 @@ end
 -- Compile a program in a private directory and run it. The C runtime is this
 -- package's glibc dep, named directly (-B for the crt objects, -L for libc):
 -- the payload's built-in sysroot is the build machine's, and this home's
--- sysroot is filled only after the whole install. Returns ok, reason.
+-- sysroot is filled only after the whole install. The directory is mktemp's:
+-- a name from the clock is shared by two installs within one second, and the
+-- first to finish removes the other's probe (measured in mcpp's CI, two homes
+-- installing gcc at once). Returns ok, reason.
 function __builds_a_program_that_runs(gcc_bin, glibc_lib)
-    local dir = path.join(os.getenv("TMPDIR") or "/tmp", "xlings-gcc-probe-" .. tostring(os.time()))
-    os.mkdir(dir)
-    local src, exe = path.join(dir, "probe.c"), path.join(dir, "probe")
-    io.writefile(src, "int main(void) { return 0; }\n")
     local runtime = glibc_lib and string.format("-B%s -L%s ", __shq(glibc_lib), __shq(glibc_lib)) or ""
-    local out = os.iorun(string.format("%s %s%s -o %s && %s && echo ran", __shq(gcc_bin), runtime,
-        __shq(src), __shq(exe), __shq(exe)))
-    os.tryrm(dir)
+    local out = os.iorun(string.format(
+        'd=$(mktemp -d "${TMPDIR:-/tmp}/xlings-gcc-probe.XXXXXX") || exit 1; ' ..
+        'printf "int main(void) { return 0; }\\n" > "$d/probe.c" && ' ..
+        '%s %s"$d/probe.c" -o "$d/probe" && "$d/probe" && echo ran; rm -rf "$d"',
+        __shq(gcc_bin), runtime))
     if out and out:find("ran", 1, true) then return true, nil end
     return false, "a program compiled with " .. gcc_bin .. " did not run"
 end
